@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AuraBot Pro - Trading Dashboard</title>
+    
+    <!-- Memuat Tailwind CSS langsung dari CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Memuat React dan ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    
+    <!-- Memuat Babel agar browser bisa membaca JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        /* Mencegah scroll horizontal pada mobile */
+        body { overflow-x: hidden; }
+        /* Kustomisasi scrollbar agar lebih elegan */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #0B0F19; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #334155; }
+    </style>
+</head>
+<body class="bg-[#0B0F19] text-slate-200 font-sans min-h-screen">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // Mengganti library lucide-react dengan komponen SVG inline agar tidak perlu install package
+        const { useState, useEffect } = React;
+
+        const TrendingUp = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>;
+        const TrendingDown = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 17 13.5 8.5 8.5 13.5 2 7"></polyline><polyline points="16 17 22 17 22 11"></polyline></svg>;
+        const Clock = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>;
+        const Activity = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>;
+        const Target = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>;
+        const ShieldAlert = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>;
+        const BarChart2 = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>;
+
+        // --- FUNGSI ANALISA TEKNIKAL ---
+        const calculateSMA = (data, window) => {
+            if (data.length < window) return null;
+            let sum = 0;
+            for (let i = data.length - window; i < data.length; i++) {
+                sum += data[i];
+            }
+            return sum / window;
+        };
+
+        const calculateRSI = (data, window = 14) => {
+            if (data.length < window + 1) return null;
+            let gains = 0, losses = 0;
+            for (let i = data.length - window; i < data.length; i++) {
+                const diff = data[i] - data[i - 1];
+                if (diff > 0) gains += diff;
+                else losses -= diff;
+            }
+            const avgGain = gains / window;
+            const avgLoss = losses / window;
+            if (avgLoss === 0) return 100;
+            const rs = avgGain / avgLoss;
+            return 100 - (100 / (1 + rs));
+        };
+
+        function App() {
+            const [asset, setAsset] = useState({ symbol: 'PAXG', name: 'EMAS SPOT (XAU/USD)', tvSymbol: 'OANDA:XAUUSD' });
+            const [timeframe, setTimeframe] = useState({ label: '1D', api: 'histoday', agg: 1, tv: 'D' });
+            const [marketData, setMarketData] = useState(null);
+            const [loading, setLoading] = useState(true);
+            const [error, setError] = useState(null);
+            const [riskParams, setRiskParams] = useState({ tp: 2.0, sl: 1.0 });
+
+            const assets = [
+                { symbol: 'PAXG', name: 'EMAS SPOT (XAU)', tvSymbol: 'OANDA:XAUUSD' },
+                { symbol: 'BTC', name: 'BITCOIN (BTC)', tvSymbol: 'BINANCE:BTCUSDT' },
+                { symbol: 'ETH', name: 'ETHEREUM (ETH)', tvSymbol: 'BINANCE:ETHUSDT' }
+            ];
+
+            const timeframes = [
+                { label: '5m', api: 'histominute', agg: 5, tv: '5' },
+                { label: '15m', api: 'histominute', agg: 15, tv: '15' },
+                { label: '30m', api: 'histominute', agg: 30, tv: '30' },
+                { label: '1H', api: 'histohour', agg: 1, tv: '60' },
+                { label: '2H', api: 'histohour', agg: 2, tv: '120' },
+                { label: '3H', api: 'histohour', agg: 3, tv: '180' },
+                { label: '4H', api: 'histohour', agg: 4, tv: '240' },
+                { label: '1D', api: 'histoday', agg: 1, tv: 'D' },
+                { label: '1W', api: 'histoday', agg: 7, tv: 'W' },
+                { label: '1M', api: 'histoday', agg: 30, tv: 'M' }
+            ];
+
+            const fetchMarketData = async () => {
+                setLoading(true);
+                try {
+                    const response = await fetch(`https://min-api.cryptocompare.com/data/v2/${timeframe.api}?fsym=${asset.symbol}&tsym=USD&limit=100&aggregate=${timeframe.agg}`);
+                    const json = await response.json();
+                    
+                    if (json.Response !== 'Success') throw new Error('Gagal memuat data dari server');
+                    
+                    const data = json.Data.Data;
+                    const closePrices = data.map(candle => parseFloat(candle.close));
+                    const currentPrice = closePrices[closePrices.length - 1];
+                    
+                    setMarketData({
+                        price: currentPrice,
+                        sma10: calculateSMA(closePrices, 10),
+                        sma50: calculateSMA(closePrices, 50),
+                        rsi: calculateRSI(closePrices, 14),
+                        timestamp: new Date().toLocaleTimeString()
+                    });
+                    setError(null);
+                } catch (e) {
+                    setError("Gagal mengambil data pasar. Periksa koneksi.");
+                }
+                setLoading(false);
+            };
+
+            useEffect(() => {
+                fetchMarketData();
+                const interval = setInterval(fetchMarketData, 60000);
+                return () => clearInterval(interval);
+            }, [asset, timeframe]);
+
+            const getSignal = () => {
+                if (!marketData) return { signal: 'LOADING', type: 'neutral' };
+                const { sma10, sma50, rsi } = marketData;
+                if (sma10 > sma50 && rsi < 70) return { signal: 'BUY', type: 'buy' };
+                if (sma10 < sma50 && rsi > 30) return { signal: 'SELL', type: 'sell' };
+                return { signal: 'HOLD', type: 'neutral' };
+            };
+
+            const signal = getSignal();
+
+            return (
+                <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
+                    {/* Header */}
+                    <header className="flex flex-col lg:flex-row justify-between items-center mb-8 gap-6 border-b border-white/10 pb-6">
+                        <div className="flex items-center gap-4 w-full lg:w-auto justify-center lg:justify-start">
+                            <div className="bg-blue-600 p-3 rounded-2xl shadow-lg shadow-blue-500/20">
+                                <BarChart2 className="text-white w-6 h-6"/>
+                            </div>
+                            <div>
+                                <h1 className="text-2xl md:text-3xl font-black tracking-tight text-white">AuraBot <span className="text-blue-500">Pro</span></h1>
+                                <p className="text-slate-400 text-xs tracking-widest uppercase font-semibold">Terminal Analisa</p>
+                            </div>
+                        </div>
+
+                        {/* Navigasi Aset & Timeframe */}
+                        <div className="flex flex-col md:flex-row gap-3 w-full lg:w-auto">
+                            <div className="flex bg-[#131B2C] p-1.5 rounded-2xl overflow-x-auto border border-white/5 shadow-inner">
+                                {assets.map(a => (
+                                    <button key={a.symbol} onClick={() => setAsset(a)} className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${asset.symbol === a.symbol ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}>
+                                        {a.name}
+                                    </button>
+                                ))}
+                            </div>
+                            <div className="flex gap-1.5 bg-[#131B2C] p-1.5 rounded-2xl overflow-x-auto border border-white/5 shadow-inner scrollbar-hide">
+                                {timeframes.map(tf => (
+                                    <button key={tf.label} onClick={() => setTimeframe(tf)} className={`px-3 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap min-w-[3rem] ${timeframe.label === tf.label ? 'bg-white text-slate-900 shadow-md' : 'text-slate-400 hover:text-white'}`}>
+                                        {tf.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* Main Grid */}
+                    <main className="grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8">
+                        {/* Kolom Kiri */}
+                        <div className="space-y-6 md:space-y-8">
+                            
+                            {/* Kartu Sinyal */}
+                            <div className={`p-6 md:p-8 rounded-[2rem] border backdrop-blur-xl transition-colors duration-500 shadow-2xl relative overflow-hidden ${
+                                signal.type === 'buy' ? 'bg-emerald-900/20 border-emerald-500/30' : 
+                                signal.type === 'sell' ? 'bg-rose-900/20 border-rose-500/30' : 
+                                'bg-[#131B2C] border-white/10'
+                            }`}>
+                                <div className="absolute top-0 right-0 -mt-8 -mr-8 opacity-10">
+                                    {signal.type === 'buy' ? <TrendingUp className="w-48 h-48" /> : signal.type === 'sell' ? <TrendingDown className="w-48 h-48" /> : <Clock className="w-48 h-48" />}
+                                </div>
+                                <p className="text-xs md:text-sm uppercase tracking-[0.2em] font-bold text-slate-400 mb-2">Status Sinyal ({timeframe.label})</p>
+                                <h2 className={`text-5xl md:text-6xl font-black mb-8 tracking-tighter ${
+                                    signal.type === 'buy' ? 'text-emerald-400' : signal.type === 'sell' ? 'text-rose-400' : 'text-white'
+                                }`}>{signal.signal}</h2>
+                                
+                                {signal.type !== 'neutral' && marketData && (
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="bg-black/30 p-4 rounded-2xl border border-white/5 backdrop-blur-sm">
+                                            <div className="flex items-center gap-2 mb-1"><Target className="w-4 h-4 text-emerald-400"/><p className="text-[10px] md:text-xs text-slate-400 font-bold tracking-wider">TAKE PROFIT</p></div>
+                                            <p className="font-mono text-lg md:text-xl font-bold text-white">${(marketData.price * (1 + (signal.type === 'buy' ? riskParams.tp/100 : -riskParams.tp/100))).toFixed(2)}</p>
+                                        </div>
+                                        <div className="bg-black/30 p-4 rounded-2xl border border-white/5 backdrop-blur-sm">
+                                            <div className="flex items-center gap-2 mb-1"><ShieldAlert className="w-4 h-4 text-rose-400"/><p className="text-[10px] md:text-xs text-slate-400 font-bold tracking-wider">STOP LOSS</p></div>
+                                            <p className="font-mono text-lg md:text-xl font-bold text-white">${(marketData.price * (1 - (signal.type === 'buy' ? riskParams.sl/100 : -riskParams.sl/100))).toFixed(2)}</p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Kartu Data Teknikal */}
+                            <div className="bg-[#131B2C] rounded-[2rem] p-6 md:p-8 border border-white/5 shadow-2xl">
+                                <h3 className="font-bold text-lg mb-6 flex items-center gap-3 text-white"><Activity className="w-5 h-5 text-blue-500"/> Indikator Pasar</h3>
+                                {marketData ? (
+                                    <div className="space-y-5">
+                                        <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-white/5 pb-4">
+                                            <span className="text-slate-400 text-sm mb-1 md:mb-0">Harga Saat Ini</span>
+                                            <span className="font-mono text-2xl font-bold text-white">${marketData.price.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="bg-black/20 p-4 rounded-xl border border-white/5">
+                                                <p className="text-xs text-slate-400 mb-1">MA 10 (Cepat)</p>
+                                                <p className={`font-mono font-bold ${marketData.sma10 > marketData.sma50 ? 'text-emerald-400' : 'text-slate-200'}`}>{marketData.sma10?.toFixed(2)}</p>
+                                            </div>
+                                            <div className="bg-black/20 p-4 rounded-xl border border-white/5">
+                                                <p className="text-xs text-slate-400 mb-1">MA 50 (Lambat)</p>
+                                                <p className="font-mono font-bold text-slate-200">{marketData.sma50?.toFixed(2)}</p>
+                                            </div>
+                                        </div>
+                                        <div className="bg-black/20 p-4 rounded-xl border border-white/5">
+                                            <div className="flex justify-between items-center mb-2">
+                                                <span className="text-xs text-slate-400">RSI ({timeframe.label})</span>
+                                                <span className={`font-mono font-bold ${marketData.rsi > 70 ? 'text-rose-400' : marketData.rsi < 30 ? 'text-emerald-400' : 'text-white'}`}>{marketData.rsi?.toFixed(1)}</span>
+                                            </div>
+                                            <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden relative">
+                                                <div className="absolute top-0 bottom-0 left-[30%] w-px bg-emerald-500/50 z-10"></div>
+                                                <div className="absolute top-0 bottom-0 left-[70%] w-px bg-rose-500/50 z-10"></div>
+                                                <div className={`h-full transition-all duration-1000 ${marketData.rsi > 70 ? 'bg-rose-500' : marketData.rsi < 30 ? 'bg-emerald-500' : 'bg-blue-500'}`} style={{ width: `${Math.min(Math.max(marketData.rsi || 50, 0), 100)}%` }}></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="animate-pulse space-y-4"><div className="h-12 bg-slate-800 rounded-xl"></div><div className="h-20 bg-slate-800 rounded-xl"></div></div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Kolom Kanan (Chart) */}
+                        <div className="xl:col-span-2 bg-[#131B2C] rounded-[2rem] p-4 md:p-6 border border-white/5 shadow-2xl h-[400px] md:h-[600px] xl:h-auto flex flex-col">
+                            <div className="flex justify-between items-center mb-4 px-2">
+                                <h3 className="font-bold text-white flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div> Live Chart</h3>
+                                {marketData && <span className="text-xs font-mono text-slate-500 bg-black/30 px-3 py-1 rounded-lg">Sync: {marketData.timestamp}</span>}
+                            </div>
+                            <div className="flex-grow rounded-xl overflow-hidden border border-white/5">
+                                <iframe 
+                                    key={timeframe.tv + asset.symbol}
+                                    title="Chart"
+                                    src={`https://s.tradingview.com/widgetembed/?frameElementId=tradingview_widget&symbol=${asset.tvSymbol}&interval=${timeframe.tv}&theme=dark&style=1&hidesidetoolbar=1&studies=RSI@tv-basicstudies`}
+                                    className="w-full h-full border-0"
+                                    allowFullScreen
+                                />
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
