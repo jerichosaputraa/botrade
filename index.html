@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AuraBot Pro - Advanced Smart Engine</title>
+    <title>AuraBot Pro - Quantum Confluence Engine v4.0</title>
     
     <!-- Memuat Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -18,19 +18,20 @@
     <style>
         body { overflow-x: hidden; }
         ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: #0B0F19; }
+        ::-webkit-scrollbar-track { background: #050811; }
         ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #334155; }
         .glow-text { text-shadow: 0 0 20px currentColor; }
+        .glow-border:focus-within { box-shadow: 0 0 15px rgba(59, 130, 246, 0.3); }
     </style>
 </head>
-<body class="bg-[#050914] text-slate-200 font-sans min-h-screen">
+<body class="bg-[#030712] text-slate-200 font-sans min-h-screen selection:bg-blue-500/30">
     <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        // --- ICONS ---
+        // --- IKON PEMBANTU (SVG INLINE) ---
         const TrendingUp = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>;
         const TrendingDown = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 17 13.5 8.5 8.5 13.5 2 7"></polyline><polyline points="16 17 22 17 22 11"></polyline></svg>;
         const Clock = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>;
@@ -40,8 +41,10 @@
         const BarChart2 = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>;
         const Timer = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 2h4"></path><path d="M12 14v-4"></path><path d="M4 13a8 8 0 0 1 8-7 8 8 0 1 1-5.3 14L4 17.6"></path><path d="M9 17H4v5"></path></svg>;
         const Cpu = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="14" x2="4" y2="14"></line></svg>;
+        const CheckCircle = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>;
+        const XCircle = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>;
 
-        // --- FUNGSI ANALISA TEKNIKAL "SMART ENGINE" ---
+        // --- ALGORITMA TEKNIKAL QUANT ENGINE v4.0 ---
         
         // 1. Simple Moving Average (SMA)
         const calculateSMA = (data, window) => {
@@ -49,31 +52,42 @@
             return data.slice(-window).reduce((a, b) => a + b) / window;
         };
 
-        // 2. Exponential Moving Average (EMA) - Dasar untuk MACD
+        // 2. Exponential Moving Average (EMA) - Dasar akurasi Ribbon
         const calculateEMA = (data, window) => {
             if (data.length < window) return null;
             const k = 2 / (window + 1);
-            let emaArray = [data.slice(0, window).reduce((a, b) => a + b) / window]; 
+            let ema = data[0]; 
+            for (let i = 1; i < data.length; i++) {
+                ema = data[i] * k + ema * (1 - k);
+            }
+            return ema;
+        };
+
+        // Fungsi khusus untuk mendapatkan array riwayat EMA (untuk MACD)
+        const calculateEMAHistory = (data, window) => {
+            if (data.length < window) return [];
+            const k = 2 / (window + 1);
+            let emaArray = [data.slice(0, window).reduce((a, b) => a + b) / window];
             for (let i = window; i < data.length; i++) {
                 emaArray.push(data[i] * k + emaArray[emaArray.length - 1] * (1 - k));
             }
             return emaArray;
         };
 
-        // 3. MACD (Moving Average Convergence Divergence)
+        // 3. MACD
         const calculateMACD = (data) => {
-            const ema12 = calculateEMA(data, 12);
-            const ema26 = calculateEMA(data, 26);
-            if (!ema12 || !ema26) return null;
+            const ema12 = calculateEMAHistory(data, 12);
+            const ema26 = calculateEMAHistory(data, 26);
+            if (ema12.length < 26 || ema26.length === 0) return null;
             
             const macdLine = [];
             const offset = ema12.length - ema26.length;
-            for(let i=0; i<ema26.length; i++) {
+            for(let i = 0; i < ema26.length; i++) {
                 macdLine.push(ema12[i + offset] - ema26[i]);
             }
             
-            const signalLine = calculateEMA(macdLine, 9);
-            if (!signalLine) return null;
+            const signalLine = calculateEMAHistory(macdLine, 9);
+            if (signalLine.length === 0) return null;
 
             return { 
                 macd: macdLine[macdLine.length - 1], 
@@ -82,7 +96,7 @@
             };
         };
 
-        // 4. RSI (Relative Strength Index)
+        // 4. RSI
         const calculateRSI = (data, window = 14) => {
             if (data.length < window + 1) return null;
             let gains = 0, losses = 0;
@@ -97,7 +111,7 @@
             return 100 - (100 / (1 + (avgGain / avgLoss)));
         };
 
-        // 5. ATR (Average True Range) - Untuk Volatilitas & Dynamic Stop Loss
+        // 5. ATR (Average True Range) - Volatilitas Dinamis
         const calculateATR = (highs, lows, closes, window = 14) => {
             if (closes.length < window + 1) return null;
             let trArray = [];
@@ -112,6 +126,22 @@
                 atr = (atr * (window - 1) + trArray[i]) / window;
             }
             return atr;
+        };
+
+        // 6. Bollinger Bands (BB) - Saringan Pencegah Pucuk & Lembah
+        const calculateBollingerBands = (data, window = 20, multiplier = 2) => {
+            if (data.length < window) return null;
+            const sma = calculateSMA(data, window);
+            
+            // Menghitung standar deviasi
+            const variance = data.slice(-window).reduce((sum, val) => sum + Math.pow(val - sma, 2), 0) / window;
+            const stdDev = Math.sqrt(variance);
+            
+            return {
+                middle: sma,
+                upper: sma + (multiplier * stdDev),
+                lower: sma - (multiplier * stdDev)
+            };
         };
 
         function App() {
@@ -132,17 +162,16 @@
             ];
 
             const [asset, setAsset] = useState(assets[0]);
-            const [timeframe, setTimeframe] = useState(timeframes[5]); // Default 1D
+            const [timeframe, setTimeframe] = useState(timeframes[5]); // Default 1D harian
             const [marketData, setMarketData] = useState(null);
             const [loading, setLoading] = useState(true);
             const [error, setError] = useState(null);
             const [countdown, setCountdown] = useState("--:--");
 
-            // Pengaturan Multiplier ATR untuk TP dan SL dinamis (Bukan lagi Persentase kaku!)
-            // Default: Risk 1 : Reward 2
-            const [atrMultipliers, setAtrMultipliers] = useState({ tp: 2.0, sl: 1.5 });
+            // Multiplier ATR untuk Jarak Keluar Dinamis (Sangat Akurat)
+            const [atrMultipliers, setAtrMultipliers] = useState({ tp1: 1.2, tp2: 2.2, sl: 1.8 });
 
-            // Countdown Timer
+            // Pengatur Detak Mundur Tutup Candle
             useEffect(() => {
                 const timer = setInterval(() => {
                     const now = new Date();
@@ -161,6 +190,7 @@
                 return () => clearInterval(timer);
             }, [timeframe]);
 
+            // Mekanisme Penarikan Data Pasar Multi-Server (Anti Blockir)
             const fetchMarketData = async () => {
                 setLoading(true);
                 setError(null);
@@ -169,15 +199,17 @@
                     const symbol = asset.symbol === 'PAXG' ? 'PAXGUSDT' : asset.symbol + 'USDT';
                     
                     try {
+                        // Rute 1: Binance Vision (Sangat Stabil)
                         const binanceUrl = `https://data-api.binance.vision/api/v3/klines?symbol=${symbol}&interval=${timeframe.interval}&limit=100`;
                         const res = await fetch(binanceUrl);
-                        if(!res.ok) throw new Error('Binance diblokir');
+                        if(!res.ok) throw new Error('Binance Vision diblokir');
                         const data = await res.json();
                         highs = data.map(c => parseFloat(c[2]));
                         lows = data.map(c => parseFloat(c[3]));
                         closes = data.map(c => parseFloat(c[4]));
                     } catch (err1) {
                         try {
+                            // Rute 2: KuCoin (Alternatif Bebas Sensor)
                             let kucoinInterval = '1day';
                             if (timeframe.label === '5m') kucoinInterval = '5min';
                             else if (timeframe.label === '15m') kucoinInterval = '15min';
@@ -191,13 +223,14 @@
                             const kucoinUrl = `https://api.kucoin.com/api/v1/market/candles?type=${kucoinInterval}&symbol=${kucoinSymbol}`;
                             const res2 = await fetch(kucoinUrl);
                             const data2 = await res2.json();
-                            if (data2.code !== '200000' || !data2.data) throw new Error('KuCoin Gagal');
+                            if (data2.code !== '200000' || !data2.data) throw new Error('KuCoin gagal');
                             const reversedData = data2.data.reverse().slice(-100);
                             
                             highs = reversedData.map(c => parseFloat(c[3]));
                             lows = reversedData.map(c => parseFloat(c[4]));
                             closes = reversedData.map(c => parseFloat(c[2]));
                         } catch (err2) {
+                            // Rute 3: CryptoCompare
                             let ccApi = 'histoday'; let ccAgg = 1;
                             if (timeframe.label === '5m') { ccApi = 'histominute'; ccAgg = 5; }
                             else if (timeframe.label === '15m') { ccApi = 'histominute'; ccAgg = 15; }
@@ -210,7 +243,7 @@
                             const ccUrl = `https://min-api.cryptocompare.com/data/v2/${ccApi}?fsym=${asset.symbol}&tsym=USD&limit=100&aggregate=${ccAgg}`;
                             const res3 = await fetch(ccUrl);
                             const data3 = await res3.json();
-                            if (data3.Response !== 'Success' || !data3.Data || !data3.Data.Data) throw new Error('CryptoCompare Gagal');
+                            if (data3.Response !== 'Success' || !data3.Data || !data3.Data.Data) throw new Error('Semua koneksi cadangan gagal');
                             
                             highs = data3.Data.Data.map(c => parseFloat(c.high));
                             lows = data3.Data.Data.map(c => parseFloat(c.low));
@@ -218,21 +251,23 @@
                         }
                     }
 
-                    if (closes.length === 0) throw new Error('Semua koneksi gagal');
+                    if (closes.length === 0) throw new Error('Gagal mendapatkan respon data.');
 
                     const currentPrice = closes[closes.length - 1];
                     
                     setMarketData({
                         price: currentPrice,
-                        sma10: calculateSMA(closes, 10),
                         sma50: calculateSMA(closes, 50),
+                        ema9: calculateEMA(closes, 9),
+                        ema21: calculateEMA(closes, 21),
                         rsi: calculateRSI(closes, 14),
                         macd: calculateMACD(closes),
                         atr: calculateATR(highs, lows, closes, 14),
+                        bb: calculateBollingerBands(closes, 20, 2),
                         timestamp: new Date().toLocaleTimeString()
                     });
                 } catch (e) {
-                    setError("Koneksi API diblokir. Sistem sedang memutar rute alternatif...");
+                    setError("Jaringan lokal terganggu. Sistem otomatis mencoba rute satelit alternatif...");
                     setMarketData(null);
                 }
                 setLoading(false);
@@ -244,33 +279,60 @@
                 return () => clearInterval(interval);
             }, [asset, timeframe]);
 
-            // --- SMART SCORING SYSTEM (Sistem Keputusan AI) ---
-            const getSignal = () => {
-                if (!marketData) return { signal: 'LOADING', type: 'neutral', score: 0 };
-                const { sma10, sma50, rsi, macd } = marketData;
-                
-                let score = 0;
-                
-                // 1. Trend Analysis (MA)
-                if (sma10 > sma50) score += 1;
-                if (sma10 < sma50) score -= 1;
-                
-                // 2. Momentum Analysis (MACD)
-                if (macd && macd.macd > macd.signal) score += 1;
-                if (macd && macd.macd < macd.signal) score -= 1;
-                
-                // 3. Overbought/Oversold Analysis (RSI)
-                // Memberikan nilai jika harga sedang murah (oversold) untuk buy, mahal untuk sell
-                if (rsi < 45) score += 1; 
-                if (rsi > 55) score -= 1; 
+            // --- SISTEM CONFLUENCE CHECKLIST (Otak Pengukur Kepercayaan Bot) ---
+            const getConfluenceChecklist = () => {
+                if (!marketData) return null;
+                const { price, ema9, ema21, sma50, rsi, macd, bb } = marketData;
 
-                // Konklusi Logika berdasarkan skor gabungan (-3 sampai +3)
-                if (score >= 2) {
-                    return { signal: score === 3 ? 'STRONG BUY' : 'BUY', type: 'buy', score };
-                } else if (score <= -2) {
-                    return { signal: score === -3 ? 'STRONG SELL' : 'SELL', type: 'sell', score };
+                const checkTrend = ema9 > ema21 && price > sma50;
+                const checkTrendBear = ema9 < ema21 && price < sma50;
+                
+                const checkMomentum = macd && macd.macd > macd.signal;
+                const checkMomentumBear = macd && macd.macd < macd.signal;
+
+                const checkRsiBull = rsi < 65; // Belum jenuh beli
+                const checkRsiBear = rsi > 35; // Belum jenuh jual
+
+                // Kunci Keberhasilan: Filter Bollinger Bands agar tidak beli di batas atas/jual di batas bawah
+                const checkBbBull = bb ? price < (bb.upper * 0.99) : true;
+                const checkBbBear = bb ? price > (bb.lower * 1.01) : true;
+
+                return {
+                    buy: [
+                        { name: "Tren Selaras (EMA 9 > EMA 21 & Harga > SMA 50)", active: checkTrend },
+                        { name: "Momentum Positif (MACD > Isyarat)", active: checkMomentum },
+                        { name: "Sisa Tenaga Naik (RSI < Jenuh Beli 70)", active: checkRsiBull },
+                        { name: "Filter Ruang Volatilitas (Harga di bawah Bollinger Band Atas)", active: checkBbBull }
+                    ],
+                    sell: [
+                        { name: "Tren Selaras (EMA 9 < EMA 21 & Harga < SMA 50)", active: checkTrendBear },
+                        { name: "Momentum Negatif (MACD < Isyarat)", active: checkMomentumBear },
+                        { name: "Sisa Ruang Turun (RSI > Jenuh Jual 30)", active: checkRsiBear },
+                        { name: "Filter Ruang Volatilitas (Harga di atas Bollinger Band Bawah)", active: checkBbBear }
+                    ]
+                };
+            };
+
+            const checklist = getConfluenceChecklist();
+
+            // Kalkulator Keputusan Final Berdasarkan Confluence Checklist
+            const getSignal = () => {
+                if (!marketData || !checklist) return { signal: 'LOADING', type: 'neutral', totalActive: 0 };
+                
+                const activeBuyConfluences = checklist.buy.filter(item => item.active).length;
+                const activeSellConfluences = checklist.sell.filter(item => item.active).length;
+
+                // Hanya keluarkan Sinyal jika Confluence Checklist minimal terpenuhi 3 dari 4 poin (Akurasi Tinggi!)
+                if (activeBuyConfluences === 4) {
+                    return { signal: 'STRONG BUY', type: 'buy', totalActive: activeBuyConfluences };
+                } else if (activeBuyConfluences === 3) {
+                    return { signal: 'BUY', type: 'buy', totalActive: activeBuyConfluences };
+                } else if (activeSellConfluences === 4) {
+                    return { signal: 'STRONG SELL', type: 'sell', totalActive: activeSellConfluences };
+                } else if (activeSellConfluences === 3) {
+                    return { signal: 'SELL', type: 'sell', totalActive: activeSellConfluences };
                 } else {
-                    return { signal: 'HOLD', type: 'neutral', score };
+                    return { signal: 'HOLD', type: 'neutral', totalActive: 0 };
                 }
             };
 
@@ -285,14 +347,14 @@
                     {/* Header */}
                     <header className="flex flex-col lg:flex-row justify-between items-center mb-8 gap-6 border-b border-white/5 pb-6">
                         <div className="flex items-center gap-4 w-full lg:w-auto justify-center lg:justify-start">
-                            <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-3 rounded-2xl shadow-lg shadow-blue-500/20">
-                                <Cpu className="text-white w-7 h-7"/>
+                            <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-3.5 rounded-2xl shadow-xl shadow-blue-500/20">
+                                <Cpu className="text-white w-7 h-7 animate-pulse"/>
                             </div>
                             <div>
-                                <h1 className="text-2xl md:text-3xl font-black tracking-tight text-white">AuraBot <span className="text-blue-500">v3.0</span></h1>
-                                <p className="text-indigo-400/80 text-xs tracking-widest uppercase font-bold flex items-center gap-2">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                                    Smart AI Engine Active
+                                <h1 className="text-2xl md:text-3xl font-black tracking-tight text-white">AuraBot <span className="text-blue-500 font-extrabold">v4.0</span></h1>
+                                <p className="text-indigo-400 text-xs tracking-widest uppercase font-bold flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+                                    Quantum Confluence Active
                                 </p>
                             </div>
                         </div>
@@ -319,21 +381,21 @@
                     {/* Main Grid */}
                     <main className="grid grid-cols-1 xl:grid-cols-12 gap-6 md:gap-8">
                         
-                        {/* Kolom Kiri: Sinyal & Rekomendasi (Lebar 5 kolom di desktop) */}
+                        {/* Kolom Kiri: Sinyal, Checklist & Indikator */}
                         <div className="xl:col-span-5 space-y-6">
                             
                             {/* Kartu Sinyal Utama dengan Efek Glow */}
                             <div className={`p-6 md:p-8 rounded-[2rem] border backdrop-blur-xl transition-all duration-700 shadow-2xl relative overflow-hidden ${
-                                signal.type === 'buy' ? 'bg-emerald-950/40 border-emerald-500/40 shadow-[0_0_50px_rgba(16,185,129,0.15)]' : 
-                                signal.type === 'sell' ? 'bg-rose-950/40 border-rose-500/40 shadow-[0_0_50px_rgba(244,63,94,0.15)]' : 
+                                signal.type === 'buy' ? 'bg-emerald-950/30 border-emerald-500/40 shadow-[0_0_50px_rgba(16,185,129,0.12)]' : 
+                                signal.type === 'sell' ? 'bg-rose-950/30 border-rose-500/40 shadow-[0_0_50px_rgba(244,63,94,0.12)]' : 
                                 'bg-white/5 border-white/10'
                             }`}>
-                                <div className="absolute top-0 right-0 -mt-8 -mr-8 opacity-[0.07]">
+                                <div className="absolute top-0 right-0 -mt-8 -mr-8 opacity-[0.05]">
                                     {signal.type === 'buy' ? <TrendingUp className="w-64 h-64" /> : signal.type === 'sell' ? <TrendingDown className="w-64 h-64" /> : <Clock className="w-64 h-64" />}
                                 </div>
                                 
                                 <div className="flex justify-between items-start mb-2 relative z-10">
-                                    <p className="text-xs md:text-sm uppercase tracking-[0.2em] font-bold text-slate-400">Keputusan Engine</p>
+                                    <p className="text-xs md:text-sm uppercase tracking-[0.2em] font-bold text-slate-400">Keputusan Final</p>
                                     <div className="flex items-center gap-1.5 bg-black/50 px-3 py-1.5 rounded-lg border border-white/5 shadow-inner">
                                         <Timer className="w-3.5 h-3.5 text-indigo-400" />
                                         <span className="text-[11px] font-mono text-slate-300 font-medium tracking-wider">{countdown}</span>
@@ -350,54 +412,84 @@
                                 {/* AI Insight Box */}
                                 <div className="bg-black/40 p-5 rounded-2xl border border-white/5 backdrop-blur-sm mb-6 relative z-10">
                                     <h4 className="text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-2 flex items-center gap-2">
-                                        <Cpu className="w-3 h-3"/> AI Market Insight
+                                        <Cpu className="w-3 h-3"/> Analisa Logika Quantum
                                     </h4>
                                     <p className="text-sm font-medium leading-relaxed">
-                                        {loading || !marketData ? "Mesin pintar sedang menganalisa volatilitas dan tren arah harga..." : 
+                                        {loading || !marketData ? "Mesin Confluence v4 sedang menimbang arah, kekuatan, batasan harga, dan volatilitas pasar..." : 
                                          signal.type === 'buy' ? 
-                                            <span className="text-emerald-200/90">Sistem mendeteksi <b>konfirmasi ganda</b> dari tren dan momentum (Skor: +{signal.score}). Segera pertimbangkan eksekusi <b>BUY</b> di sekitar <b className="text-emerald-400">${formatPrice(marketData.price)}</b>.</span> :
+                                            <span className="text-emerald-200/90">Akurasi tinggi terdeteksi! Bot mengonfirmasi <b>{signal.totalActive} dari 4 syarat beli</b> terpenuhi. Hindari membeli jika menyentuh Bollinger atas. Pertimbangkan masuk di <b className="text-emerald-400">${formatPrice(marketData.price)}</b>.</span> :
                                          signal.type === 'sell' ? 
-                                            <span className="text-rose-200/90">Sistem mendeteksi <b>tekanan jual masif</b> dari tren dan momentum (Skor: {signal.score}). Segera pertimbangkan eksekusi <b>SELL</b> di sekitar <b className="text-rose-400">${formatPrice(marketData.price)}</b>.</span> :
-                                            <span className="text-slate-300">Skor indikator netral atau berlawanan arah. Pasar sedang tidak jelas gerakannya. Tetap disiplin <b>TUNGGU (HOLD)</b>.</span>
+                                            <span className="text-rose-200/90">Tekanan jual solid terdeteksi! Bot mengonfirmasi <b>{signal.totalActive} dari 4 syarat jual</b> terpenuhi. Hindari menjual jika di luar Bollinger bawah. Pertimbangkan masuk di <b className="text-rose-400">${formatPrice(marketData.price)}</b>.</span> :
+                                            <span className="text-slate-300">Syarat confluence tidak mencukupi untuk entri aman saat ini. Sangat disarankan untuk tetap disiplin **TUNGGU (HOLD)** demi menghindari jebakan arah pasar.</span>
                                         }
                                     </p>
                                 </div>
 
-                                {/* Dynamic TP & SL (Based on ATR) */}
+                                {/* Dynamic Multi-TP & SL (ATR Volatility Based) */}
                                 {signal.type !== 'neutral' && marketData && (
-                                    <div className="grid grid-cols-2 gap-4 relative z-10">
-                                        <div className="bg-black/40 p-4 rounded-2xl border border-emerald-500/30">
-                                            <div className="flex items-center justify-between mb-1">
-                                                <div className="flex items-center gap-2">
-                                                    <Target className="w-4 h-4 text-emerald-400"/>
-                                                    <p className="text-[10px] md:text-[11px] text-emerald-400 font-bold tracking-wider">TAKE PROFIT</p>
-                                                </div>
+                                    <div className="grid grid-cols-3 gap-3 relative z-10">
+                                        <div className="bg-black/40 p-3 rounded-xl border border-emerald-500/20">
+                                            <div className="flex items-center gap-1.5 mb-1">
+                                                <Target className="w-3.5 h-3.5 text-emerald-400"/>
+                                                <p className="text-[9px] text-emerald-400 font-bold tracking-wider">TAKE PROFIT 1</p>
                                             </div>
-                                            <p className="font-mono text-xl md:text-2xl font-bold text-white mt-1">
-                                                ${formatPrice(signal.type === 'buy' ? marketData.price + (marketData.atr * atrMultipliers.tp) : marketData.price - (marketData.atr * atrMultipliers.tp))}
+                                            <p className="font-mono text-sm md:text-base font-bold text-white">
+                                                ${formatPrice(signal.type === 'buy' ? marketData.price + (marketData.atr * atrMultipliers.tp1) : marketData.price - (marketData.atr * atrMultipliers.tp1))}
                                             </p>
-                                            <p className="text-[10px] text-emerald-500/70 mt-1 font-mono">Dinamis (+{atrMultipliers.tp}x ATR)</p>
+                                            <p className="text-[9px] text-emerald-500/60 mt-0.5 font-mono">Konservatif (+{atrMultipliers.tp1}x ATR)</p>
                                         </div>
-                                        <div className="bg-black/40 p-4 rounded-2xl border border-rose-500/30">
-                                            <div className="flex items-center justify-between mb-1">
-                                                <div className="flex items-center gap-2">
-                                                    <ShieldAlert className="w-4 h-4 text-rose-400"/>
-                                                    <p className="text-[10px] md:text-[11px] text-rose-400 font-bold tracking-wider">STOP LOSS</p>
-                                                </div>
+                                        
+                                        <div className="bg-black/40 p-3 rounded-xl border border-emerald-500/20">
+                                            <div className="flex items-center gap-1.5 mb-1">
+                                                <Target className="w-3.5 h-3.5 text-emerald-300"/>
+                                                <p className="text-[9px] text-emerald-300 font-bold tracking-wider">TAKE PROFIT 2</p>
                                             </div>
-                                            <p className="font-mono text-xl md:text-2xl font-bold text-white mt-1">
+                                            <p className="font-mono text-sm md:text-base font-bold text-white">
+                                                ${formatPrice(signal.type === 'buy' ? marketData.price + (marketData.atr * atrMultipliers.tp2) : marketData.price - (marketData.atr * atrMultipliers.tp2))}
+                                            </p>
+                                            <p className="text-[9px] text-emerald-300/60 mt-0.5 font-mono">Agresif (+{atrMultipliers.tp2}x ATR)</p>
+                                        </div>
+
+                                        <div className="bg-black/40 p-3 rounded-xl border border-rose-500/20">
+                                            <div className="flex items-center gap-1.5 mb-1">
+                                                <ShieldAlert className="w-3.5 h-3.5 text-rose-400"/>
+                                                <p className="text-[9px] text-rose-400 font-bold tracking-wider">STOP LOSS</p>
+                                            </div>
+                                            <p className="font-mono text-sm md:text-base font-bold text-white">
                                                 ${formatPrice(signal.type === 'buy' ? marketData.price - (marketData.atr * atrMultipliers.sl) : marketData.price + (marketData.atr * atrMultipliers.sl))}
                                             </p>
-                                            <p className="text-[10px] text-rose-500/70 mt-1 font-mono">Dinamis (-{atrMultipliers.sl}x ATR)</p>
+                                            <p className="text-[9px] text-rose-500/60 mt-0.5 font-mono">Dinamis (-{atrMultipliers.sl}x ATR)</p>
                                         </div>
                                     </div>
                                 )}
                             </div>
 
-                            {/* Kartu Indikator Teknikal Lanjutan */}
+                            {/* Panel Visual Confluence Checklist */}
+                            {marketData && checklist && (
+                                <div className="bg-white/5 rounded-[2rem] p-6 border border-white/5 shadow-2xl">
+                                    <h3 className="font-bold text-sm uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2">
+                                        <CheckCircle className="w-4 h-4 text-blue-400" />
+                                        Confluence Checklist ({signal.type === 'sell' ? 'Skenario Jual' : 'Skenario Beli'})
+                                    </h3>
+                                    <div className="space-y-3.5">
+                                        {(signal.type === 'sell' ? checklist.sell : checklist.buy).map((item, index) => (
+                                            <div key={index} className="flex items-center justify-between bg-black/20 p-3 rounded-xl border border-white/5">
+                                                <span className={`text-xs ${item.active ? 'text-slate-200' : 'text-slate-500'}`}>{item.name}</span>
+                                                {item.active ? (
+                                                    <CheckCircle className="w-5 h-5 text-emerald-400 flex-shrink-0 ml-2" />
+                                                ) : (
+                                                    <XCircle className="w-5 h-5 text-slate-600 flex-shrink-0 ml-2" />
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Kartu Indikator Dashboard */}
                             <div className="bg-white/5 rounded-[2rem] p-6 md:p-8 border border-white/5 shadow-2xl">
                                 <h3 className="font-bold text-lg mb-6 flex items-center gap-3 text-white">
-                                    <Activity className="w-5 h-5 text-indigo-400"/> Dashboard Indikator
+                                    <Activity className="w-5 h-5 text-indigo-400"/> Monitor Indikator
                                 </h3>
                                 
                                 {error && (
@@ -411,55 +503,56 @@
                                     <div className="space-y-4">
                                         {/* Harga */}
                                         <div className="flex justify-between items-end border-b border-white/5 pb-4 mb-2">
-                                            <span className="text-slate-400 text-sm">Harga {asset.symbol}</span>
+                                            <span className="text-slate-400 text-sm">Harga {asset.symbol} Terkini</span>
                                             <span className="font-mono text-3xl font-black text-white">${formatPrice(marketData.price)}</span>
                                         </div>
 
                                         {/* Grid Indikator Kinerja */}
                                         <div className="grid grid-cols-2 gap-3">
-                                            {/* MA Status */}
+                                            
+                                            {/* Ribbon EMA status */}
                                             <div className="bg-black/30 p-3.5 rounded-xl border border-white/5 flex flex-col justify-between">
-                                                <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-2">Tren (SMA)</p>
+                                                <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-2">Ribbon EMA Jangka Pendek</p>
                                                 <div className="flex justify-between items-center">
                                                     <div>
-                                                        <p className="text-[10px] text-slate-400">MA 10</p>
-                                                        <p className={`font-mono text-sm font-bold ${marketData.sma10 > marketData.sma50 ? 'text-emerald-400' : 'text-slate-200'}`}>{marketData.sma10?.toFixed(2)}</p>
+                                                        <p className="text-[10px] text-slate-400">EMA 9</p>
+                                                        <p className={`font-mono text-xs font-bold ${marketData.ema9 > marketData.ema21 ? 'text-emerald-400' : 'text-slate-200'}`}>{marketData.ema9?.toFixed(2)}</p>
                                                     </div>
                                                     <div className="text-right">
-                                                        <p className="text-[10px] text-slate-400">MA 50</p>
-                                                        <p className="font-mono text-sm font-bold text-slate-200">{marketData.sma50?.toFixed(2)}</p>
+                                                        <p className="text-[10px] text-slate-400">EMA 21</p>
+                                                        <p className="font-mono text-xs font-bold text-slate-200">{marketData.ema21?.toFixed(2)}</p>
                                                     </div>
                                                 </div>
                                             </div>
 
-                                            {/* Momentum Status */}
+                                            {/* MACD Status */}
                                             <div className="bg-black/30 p-3.5 rounded-xl border border-white/5 flex flex-col justify-between">
                                                 <div className="flex justify-between items-start mb-2">
-                                                    <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Momentum</p>
+                                                    <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Arah Momentum</p>
                                                     <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${marketData.macd?.macd > marketData.macd?.signal ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>
                                                         MACD
                                                     </span>
                                                 </div>
-                                                <p className="font-mono text-sm text-slate-300">Hist: <span className={marketData.macd?.hist > 0 ? 'text-emerald-400' : 'text-rose-400'}>{marketData.macd?.hist > 0 ? '+' : ''}{marketData.macd?.hist.toFixed(2)}</span></p>
+                                                <p className="font-mono text-xs text-slate-300">Selisih: <span className={marketData.macd?.hist > 0 ? 'text-emerald-400' : 'text-rose-400'}>{marketData.macd?.hist > 0 ? '+' : ''}{marketData.macd?.hist?.toFixed(2)}</span></p>
                                             </div>
                                             
                                             {/* Volatilitas (ATR) */}
                                             <div className="bg-black/30 p-3.5 rounded-xl border border-white/5 flex flex-col justify-between">
                                                 <div className="flex justify-between items-start mb-2">
-                                                    <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Volatilitas</p>
+                                                    <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Rentang Volatilitas</p>
                                                     <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-400">ATR 14</span>
                                                 </div>
-                                                <p className="font-mono text-sm font-bold text-white">{marketData.atr?.toFixed(2)} pts</p>
+                                                <p className="font-mono text-xs font-bold text-white">{marketData.atr?.toFixed(2)} USD</p>
                                             </div>
 
                                             {/* RSI */}
                                             <div className="bg-black/30 p-3.5 rounded-xl border border-white/5 flex flex-col justify-between">
                                                 <div className="flex justify-between items-start mb-2">
-                                                    <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Kekuatan</p>
+                                                    <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Kekuatan Tren</p>
                                                     <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400">RSI 14</span>
                                                 </div>
                                                 <div className="flex items-center gap-2">
-                                                    <p className={`font-mono text-sm font-bold ${marketData.rsi > 70 ? 'text-rose-400' : marketData.rsi < 30 ? 'text-emerald-400' : 'text-white'}`}>{marketData.rsi?.toFixed(1)}</p>
+                                                    <p className={`font-mono text-xs font-bold ${marketData.rsi > 70 ? 'text-rose-400' : marketData.rsi < 30 ? 'text-emerald-400' : 'text-white'}`}>{marketData.rsi?.toFixed(1)}</p>
                                                     <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden flex-1">
                                                         <div className={`h-full ${marketData.rsi > 70 ? 'bg-rose-500' : marketData.rsi < 30 ? 'bg-emerald-500' : 'bg-blue-500'}`} style={{ width: `${Math.min(Math.max(marketData.rsi || 50, 0), 100)}%` }}></div>
                                                     </div>
@@ -467,6 +560,26 @@
                                             </div>
                                         </div>
 
+                                        {/* Bollinger Bands Visual Status */}
+                                        {marketData.bb && (
+                                            <div className="bg-black/30 p-4 rounded-xl border border-white/5">
+                                                <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-2">Batas Saluran Bollinger Bands</p>
+                                                <div className="space-y-1 text-xs">
+                                                    <div className="flex justify-between text-rose-400/80">
+                                                        <span>Upper Band (Batas Atas):</span>
+                                                        <span className="font-mono">${marketData.bb.upper.toFixed(2)}</span>
+                                                    </div>
+                                                    <div className="flex justify-between text-slate-400">
+                                                        <span>Middle Band (MA 20):</span>
+                                                        <span className="font-mono">${marketData.bb.middle.toFixed(2)}</span>
+                                                    </div>
+                                                    <div className="flex justify-between text-emerald-400/80">
+                                                        <span>Lower Band (Batas Bawah):</span>
+                                                        <span className="font-mono">${marketData.bb.lower.toFixed(2)}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 ) : (
                                     <div className="animate-pulse space-y-4"><div className="h-12 bg-white/5 rounded-xl"></div><div className="h-32 bg-white/5 rounded-xl"></div></div>
@@ -474,10 +587,9 @@
                             </div>
                         </div>
 
-                        {/* Kolom Kanan: Live Chart TradingView (Lebar 7 kolom di desktop) */}
+                        {/* Kolom Kanan: Live Chart TradingView */}
                         <div className="xl:col-span-7 bg-white/5 rounded-[2rem] p-4 md:p-6 border border-white/5 shadow-2xl h-[500px] md:h-[600px] xl:h-auto flex flex-col relative overflow-hidden">
                             
-                            {/* Efek Gradien Latar Belakang di belakang Chart */}
                             <div className="absolute top-[-20%] right-[-10%] w-[50%] h-[50%] bg-indigo-600/10 blur-[100px] rounded-full pointer-events-none"></div>
 
                             <div className="flex justify-between items-center mb-4 px-2 relative z-10">
@@ -492,13 +604,13 @@
                                 {loading && (
                                     <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-[#050914]/80 backdrop-blur-md">
                                         <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-                                        <p className="text-xs text-indigo-300 font-mono tracking-widest uppercase">Mengkalkulasi Data...</p>
+                                        <p className="text-xs text-indigo-300 font-mono tracking-widest uppercase">Mengkalkulasi Konfluensi...</p>
                                     </div>
                                 )}
                                 <iframe 
                                     key={timeframe.tv + asset.symbol}
                                     title="Chart"
-                                    src={`https://s.tradingview.com/widgetembed/?frameElementId=tradingview_widget&symbol=${asset.tvSymbol}&interval=${timeframe.tv}&theme=dark&style=1&hidesidetoolbar=1&studies=RSI@tv-basicstudies%1FMACD@tv-basicstudies`}
+                                    src={`https://s.tradingview.com/widgetembed/?frameElementId=tradingview_widget&symbol=${asset.tvSymbol}&interval=${timeframe.tv}&theme=dark&style=1&hidesidetoolbar=1&studies=RSI@tv-basicstudies%1FMACD@tv-basicstudies%1FBB@tv-basicstudies`}
                                     className="w-full h-full border-0 relative z-10"
                                     allowFullScreen
                                 />
