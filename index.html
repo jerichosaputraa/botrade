@@ -39,6 +39,7 @@
         const Target = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>;
         const ShieldAlert = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>;
         const BarChart2 = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>;
+        const Timer = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 2h4"></path><path d="M12 14v-4"></path><path d="M4 13a8 8 0 0 1 8-7 8 8 0 1 1-5.3 14L4 17.6"></path><path d="M9 17H4v5"></path></svg>;
 
         // --- FUNGSI ANALISA TEKNIKAL ---
         const calculateSMA = (data, window) => {
@@ -66,30 +67,58 @@
         };
 
         function App() {
-            const [asset, setAsset] = useState({ symbol: 'PAXG', name: 'EMAS SPOT (XAU/USD)', tvSymbol: 'OANDA:XAUUSD' });
-            const [timeframe, setTimeframe] = useState({ label: '1D', api: 'histoday', agg: 1, tv: 'D' });
-            const [marketData, setMarketData] = useState(null);
-            const [loading, setLoading] = useState(true);
-            const [error, setError] = useState(null);
-            const [riskParams, setRiskParams] = useState({ tp: 2.0, sl: 1.0 });
-
             const assets = [
                 { symbol: 'PAXG', name: 'EMAS SPOT (XAU)', tvSymbol: 'OANDA:XAUUSD' },
                 { symbol: 'BTC', name: 'BITCOIN (BTC)', tvSymbol: 'BINANCE:BTCUSDT' },
                 { symbol: 'ETH', name: 'ETHEREUM (ETH)', tvSymbol: 'BINANCE:ETHUSDT' }
             ];
 
+            // Menambahkan preset dinamis TP dan SL berdasarkan Timeframe
             const timeframes = [
-                { label: '5m', interval: '5m', tv: '5' },
-                { label: '15m', interval: '15m', tv: '15' },
-                { label: '30m', interval: '30m', tv: '30' },
-                { label: '1H', interval: '1h', tv: '60' },
-                { label: '2H', interval: '2h', tv: '120' },
-                { label: '4H', interval: '4h', tv: '240' },
-                { label: '1D', interval: '1d', tv: 'D' },
-                { label: '1W', interval: '1w', tv: 'W' },
-                { label: '1M', interval: '1M', tv: 'M' }
+                { label: '5m', interval: '5m', tv: '5', ms: 5 * 60 * 1000, defTp: 0.15, defSl: 0.08 },
+                { label: '15m', interval: '15m', tv: '15', ms: 15 * 60 * 1000, defTp: 0.25, defSl: 0.15 },
+                { label: '30m', interval: '30m', tv: '30', ms: 30 * 60 * 1000, defTp: 0.35, defSl: 0.20 },
+                { label: '1H', interval: '1h', tv: '60', ms: 60 * 60 * 1000, defTp: 0.60, defSl: 0.30 },
+                { label: '2H', interval: '2h', tv: '120', ms: 120 * 60 * 1000, defTp: 0.80, defSl: 0.40 },
+                { label: '4H', interval: '4h', tv: '240', ms: 240 * 60 * 1000, defTp: 1.20, defSl: 0.60 },
+                { label: '1D', interval: '1d', tv: 'D', ms: 24 * 60 * 60 * 1000, defTp: 2.50, defSl: 1.25 },
+                { label: '1W', interval: '1w', tv: 'W', ms: 7 * 24 * 60 * 60 * 1000, defTp: 5.00, defSl: 2.50 },
+                { label: '1M', interval: '1M', tv: 'M', ms: 30 * 24 * 60 * 60 * 1000, defTp: 10.0, defSl: 5.00 }
             ];
+
+            const [asset, setAsset] = useState(assets[0]);
+            const [timeframe, setTimeframe] = useState(timeframes[6]); // Default 1D
+            const [marketData, setMarketData] = useState(null);
+            const [loading, setLoading] = useState(true);
+            const [error, setError] = useState(null);
+            const [riskParams, setRiskParams] = useState({ tp: timeframe.defTp, sl: timeframe.defSl });
+            const [countdown, setCountdown] = useState("--:--");
+
+            // Efek ganti timeframe: Reset TP/SL sesuai rekomendasi timeframe tersebut
+            useEffect(() => {
+                setRiskParams({ tp: timeframe.defTp, sl: timeframe.defSl });
+            }, [timeframe]);
+
+            // Efek Live Countdown Timer untuk Candle Close
+            useEffect(() => {
+                const timer = setInterval(() => {
+                    const now = new Date();
+                    // Menghitung waktu tutup candle terdekat secara matematis (Epoch Time modulo)
+                    const nextTick = Math.ceil(now.getTime() / timeframe.ms) * timeframe.ms;
+                    let diff = nextTick - now.getTime();
+                    
+                    let h = Math.floor(diff / (1000 * 60 * 60));
+                    let m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                    let s = Math.floor((diff % (1000 * 60)) / 1000);
+                    
+                    if (timeframe.label === '1W' || timeframe.label === '1M') {
+                        setCountdown(`${Math.floor(h/24)} Hari lagi`);
+                    } else {
+                        setCountdown(`${h > 0 ? h + 'j ' : ''}${m.toString().padStart(2, '0')}m ${s.toString().padStart(2, '0')}s`);
+                    }
+                }, 1000);
+                return () => clearInterval(timer);
+            }, [timeframe]);
 
             const fetchMarketData = async () => {
                 setLoading(true);
@@ -115,6 +144,7 @@
                             else if (timeframe.label === '4H') kucoinInterval = '4hour';
                             else if (timeframe.label === '1D') kucoinInterval = '1day';
                             else if (timeframe.label === '1W') kucoinInterval = '1week';
+                            else if (timeframe.label === '1M') kucoinInterval = '1month';
                             
                             const kucoinSymbol = asset.symbol === 'PAXG' ? 'PAXG-USDT' : asset.symbol + '-USDT';
                             const kucoinUrl = `https://api.kucoin.com/api/v1/market/candles?type=${kucoinInterval}&symbol=${kucoinSymbol}`;
@@ -123,7 +153,6 @@
                             
                             if (data2.code !== '200000' || !data2.data) throw new Error('KuCoin Gagal');
                             
-                            // KuCoin mengurutkan data dari terbaru ke terlama, dan harga ada di index 2
                             const reversedData = data2.data.reverse().slice(-100);
                             closePrices = reversedData.map(candle => parseFloat(candle[2]));
                         } catch (err2) {
@@ -158,7 +187,7 @@
                         timestamp: new Date().toLocaleTimeString()
                     });
                 } catch (e) {
-                    setError("Koneksi terblokir penuh oleh Provider Internet. Mencoba ulang...");
+                    setError("Koneksi terblokir penuh. Sistem mencari rute alternatif...");
                     setMarketData(null);
                 }
                 setLoading(false);
@@ -179,6 +208,11 @@
             };
 
             const signal = getSignal();
+
+            // Format Harga Mata Uang
+            const formatPrice = (price) => {
+                return price >= 1000 ? price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : price.toLocaleString('en-US', {minimumFractionDigits: 4, maximumFractionDigits: 4});
+            };
 
             return (
                 <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
@@ -218,7 +252,7 @@
                         {/* Kolom Kiri */}
                         <div className="space-y-6 md:space-y-8">
                             
-                            {/* Kartu Sinyal */}
+                            {/* Kartu Sinyal Utama */}
                             <div className={`p-6 md:p-8 rounded-[2rem] border backdrop-blur-xl transition-colors duration-500 shadow-2xl relative overflow-hidden ${
                                 signal.type === 'buy' ? 'bg-emerald-900/20 border-emerald-500/30' : 
                                 signal.type === 'sell' ? 'bg-rose-900/20 border-rose-500/30' : 
@@ -227,20 +261,57 @@
                                 <div className="absolute top-0 right-0 -mt-8 -mr-8 opacity-10">
                                     {signal.type === 'buy' ? <TrendingUp className="w-48 h-48" /> : signal.type === 'sell' ? <TrendingDown className="w-48 h-48" /> : <Clock className="w-48 h-48" />}
                                 </div>
-                                <p className="text-xs md:text-sm uppercase tracking-[0.2em] font-bold text-slate-400 mb-2">Status Sinyal ({timeframe.label})</p>
-                                <h2 className={`text-4xl md:text-6xl font-black mb-8 tracking-tighter ${
+                                
+                                <div className="flex justify-between items-start mb-2">
+                                    <p className="text-xs md:text-sm uppercase tracking-[0.2em] font-bold text-slate-400">Status Sinyal ({timeframe.label})</p>
+                                    <div className="flex items-center gap-1.5 bg-black/40 px-3 py-1.5 rounded-lg border border-white/5">
+                                        <Timer className="w-3.5 h-3.5 text-blue-400" />
+                                        <span className="text-xs font-mono text-slate-300 font-medium">Ganti di: {countdown}</span>
+                                    </div>
+                                </div>
+                                
+                                <h2 className={`text-4xl md:text-6xl font-black mb-6 tracking-tighter ${
                                     error ? 'text-rose-500' : signal.type === 'buy' ? 'text-emerald-400' : signal.type === 'sell' ? 'text-rose-400' : 'text-white'
                                 }`}>{error ? 'GANGGUAN' : signal.signal}</h2>
                                 
+                                {/* Kotak Rekomendasi Aksi */}
+                                <div className="bg-black/30 p-4 rounded-2xl border border-white/5 backdrop-blur-sm mb-6">
+                                    <p className="text-sm font-medium leading-relaxed">
+                                        {loading || !marketData ? "Sedang menghitung peluang pasar..." : 
+                                         signal.type === 'buy' ? 
+                                            <span className="text-emerald-300">💡 <b>REKOMENDASI:</b> Segera eksekusi <b>BUY</b> di sekitar harga <b>${formatPrice(marketData.price)}</b>. Pasang pengaman Take Profit dan Stop Loss pada titik di bawah ini.</span> :
+                                         signal.type === 'sell' ? 
+                                            <span className="text-rose-300">💡 <b>REKOMENDASI:</b> Segera eksekusi <b>SELL</b> di sekitar harga <b>${formatPrice(marketData.price)}</b>. Pasang pengaman Take Profit dan Stop Loss pada titik di bawah ini.</span> :
+                                            <span className="text-slate-300">⏳ <b>REKOMENDASI:</b> Kondisi pasar sedang rawan atau tidak menentu. Tetap <b>TUNGGU (HOLD)</b> dan jangan masuk ke pasar sampai candle ({timeframe.label}) berikutnya selesai.</span>
+                                        }
+                                    </p>
+                                </div>
+
                                 {signal.type !== 'neutral' && marketData && (
                                     <div className="grid grid-cols-2 gap-4">
-                                        <div className="bg-black/30 p-4 rounded-2xl border border-white/5 backdrop-blur-sm">
-                                            <div className="flex items-center gap-2 mb-1"><Target className="w-4 h-4 text-emerald-400"/><p className="text-[10px] md:text-xs text-slate-400 font-bold tracking-wider">TAKE PROFIT</p></div>
-                                            <p className="font-mono text-lg md:text-xl font-bold text-white">${(marketData.price * (1 + (signal.type === 'buy' ? riskParams.tp/100 : -riskParams.tp/100))).toFixed(2)}</p>
+                                        <div className="bg-black/30 p-4 rounded-2xl border border-emerald-500/20 shadow-[inset_0_0_20px_rgba(16,185,129,0.05)]">
+                                            <div className="flex items-center justify-between mb-1">
+                                                <div className="flex items-center gap-2">
+                                                    <Target className="w-4 h-4 text-emerald-400"/>
+                                                    <p className="text-[10px] md:text-xs text-emerald-400/80 font-bold tracking-wider">TAKE PROFIT</p>
+                                                </div>
+                                                <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded font-mono">{riskParams.tp}%</span>
+                                            </div>
+                                            <p className="font-mono text-lg md:text-xl font-bold text-white mt-1">
+                                                ${formatPrice(marketData.price * (1 + (signal.type === 'buy' ? riskParams.tp/100 : -riskParams.tp/100)))}
+                                            </p>
                                         </div>
-                                        <div className="bg-black/30 p-4 rounded-2xl border border-white/5 backdrop-blur-sm">
-                                            <div className="flex items-center gap-2 mb-1"><ShieldAlert className="w-4 h-4 text-rose-400"/><p className="text-[10px] md:text-xs text-slate-400 font-bold tracking-wider">STOP LOSS</p></div>
-                                            <p className="font-mono text-lg md:text-xl font-bold text-white">${(marketData.price * (1 - (signal.type === 'buy' ? riskParams.sl/100 : -riskParams.sl/100))).toFixed(2)}</p>
+                                        <div className="bg-black/30 p-4 rounded-2xl border border-rose-500/20 shadow-[inset_0_0_20px_rgba(244,63,94,0.05)]">
+                                            <div className="flex items-center justify-between mb-1">
+                                                <div className="flex items-center gap-2">
+                                                    <ShieldAlert className="w-4 h-4 text-rose-400"/>
+                                                    <p className="text-[10px] md:text-xs text-rose-400/80 font-bold tracking-wider">STOP LOSS</p>
+                                                </div>
+                                                <span className="text-[10px] bg-rose-500/20 text-rose-400 px-2 py-0.5 rounded font-mono">{riskParams.sl}%</span>
+                                            </div>
+                                            <p className="font-mono text-lg md:text-xl font-bold text-white mt-1">
+                                                ${formatPrice(marketData.price * (1 - (signal.type === 'buy' ? riskParams.sl/100 : -riskParams.sl/100)))}
+                                            </p>
                                         </div>
                                     </div>
                                 )}
@@ -253,15 +324,15 @@
                                 {error && (
                                     <div className="mb-6 p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-400 text-xs flex gap-3 items-start">
                                         <ShieldAlert className="w-5 h-5 flex-shrink-0" />
-                                        <p>{error} ISP internet kamu mungkin sedang memblokir server. Bot sedang memutar menggunakan rute alternatif.</p>
+                                        <p>{error}</p>
                                     </div>
                                 )}
 
                                 {marketData ? (
                                     <div className="space-y-5">
                                         <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-white/5 pb-4">
-                                            <span className="text-slate-400 text-sm mb-1 md:mb-0">Harga Saat Ini</span>
-                                            <span className="font-mono text-2xl font-bold text-white">${marketData.price.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                                            <span className="text-slate-400 text-sm mb-1 md:mb-0">Harga Terkini</span>
+                                            <span className="font-mono text-2xl font-bold text-white">${formatPrice(marketData.price)}</span>
                                         </div>
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="bg-black/20 p-4 rounded-xl border border-white/5">
@@ -294,15 +365,21 @@
                         {/* Kolom Kanan (Chart) */}
                         <div className="xl:col-span-2 bg-[#131B2C] rounded-[2rem] p-4 md:p-6 border border-white/5 shadow-2xl h-[400px] md:h-[600px] xl:h-auto flex flex-col">
                             <div className="flex justify-between items-center mb-4 px-2">
-                                <h3 className="font-bold text-white flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div> Live Chart</h3>
+                                <h3 className="font-bold text-white flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div> Live Chart ({timeframe.label})</h3>
                                 {marketData && <span className="text-xs font-mono text-slate-500 bg-black/30 px-3 py-1 rounded-lg">Sync: {marketData.timestamp}</span>}
                             </div>
-                            <div className="flex-grow rounded-xl overflow-hidden border border-white/5">
+                            <div className="flex-grow rounded-xl overflow-hidden border border-white/5 relative bg-black/50">
+                                {/* Loading Overlay untuk iframe */}
+                                {loading && (
+                                    <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#131B2C]/80 backdrop-blur-sm">
+                                        <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                                    </div>
+                                )}
                                 <iframe 
                                     key={timeframe.tv + asset.symbol}
                                     title="Chart"
                                     src={`https://s.tradingview.com/widgetembed/?frameElementId=tradingview_widget&symbol=${asset.tvSymbol}&interval=${timeframe.tv}&theme=dark&style=1&hidesidetoolbar=1&studies=RSI@tv-basicstudies`}
-                                    className="w-full h-full border-0"
+                                    className="w-full h-full border-0 relative z-0"
                                     allowFullScreen
                                 />
                             </div>
