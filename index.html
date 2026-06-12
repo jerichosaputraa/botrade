@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AuraBot Pro - Institutional Quant v5.0</title>
+    <title>AuraBot Pro - Institutional Quant v5.0 (Telegram Enabled)</title>
     
     <!-- Memuat Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -25,14 +25,13 @@
         .amber-glow { box-shadow: 0 0 30px rgba(245, 158, 11, 0.15); }
     </style>
 </head>
-<body class="bg-[#020617] text-slate-200 font-sans min-h-screen selection:bg-amber-500/30">
+<body class="bg-[#020617] text-slate-200 font-sans min-h-screen selection:bg-amber-500/30 relative">
     <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        // --- IKON PEMBANTU ---
-        const TrendingUp = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>;
+        //        const TrendingUp = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>;
         const TrendingDown = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 17 13.5 8.5 8.5 13.5 2 7"></polyline><polyline points="16 17 22 17 22 11"></polyline></svg>;
         const Clock = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>;
         const Activity = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>;
@@ -43,9 +42,11 @@
         const CheckCircle = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>;
         const XCircle = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>;
         const BarChart = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>;
+        const Bell = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>;
+        const Send = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>;
+        const XIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>;
 
-        // --- ALGORITMA TEKNIKAL INSTITUTIONAL QUANT v5.0 ---
-        
+        //        
         const calculateSMA = (data, window) => {
             if (data.length < window) return null;
             return data.slice(-window).reduce((a, b) => a + b) / window;
@@ -130,7 +131,6 @@
             return { middle: sma, upper: sma + (multiplier * stdDev), lower: sma - (multiplier * stdDev) };
         };
 
-        // NEW: Stochastic Oscillator (Precision Entry)
         const calculateStochastic = (highs, lows, closes, period = 14, smoothK = 3) => {
             if (closes.length < period) return null;
             let stochK = [];
@@ -148,7 +148,6 @@
             return { k: currentK, d: smoothKVal };
         };
 
-        // NEW: Volume Surge Analysis
         const calculateVolumeSurge = (volumes, window = 20) => {
             if (volumes.length < window + 1) return null;
             const currentVol = volumes[volumes.length - 1];
@@ -156,11 +155,11 @@
             return {
                 current: currentVol,
                 average: avgVol,
-                isSurging: currentVol > (avgVol * 1.2) // Volume 20% di atas rata-rata = Surge
+                isSurging: currentVol > (avgVol * 1.2) 
             };
         };
 
-        function App() {
+        //        function App() {
             const assets = [
                 { symbol: 'PAXG', name: 'EMAS SPOT (XAU)', tvSymbol: 'OANDA:XAUUSD' },
                 { symbol: 'BTC', name: 'BITCOIN (BTC)', tvSymbol: 'BINANCE:BTCUSDT' },
@@ -178,14 +177,28 @@
             ];
 
             const [asset, setAsset] = useState(assets[0]);
-            const [timeframe, setTimeframe] = useState(timeframes[5]);
+            const [timeframe, setTimeframe] = useState(timeframes[3]); // Default 1H
             const [marketData, setMarketData] = useState(null);
             const [loading, setLoading] = useState(true);
             const [error, setError] = useState(null);
             const [countdown, setCountdown] = useState("--:--");
-
             const [atrMultipliers, setAtrMultipliers] = useState({ tp1: 1.2, tp2: 2.2, sl: 1.5 });
 
+            // --- STATE UNTUK TELEGRAM ALERTS ---
+            const [showTgModal, setShowTgModal] = useState(false);
+            const [tgToken, setTgToken] = useState(localStorage.getItem('tgToken') || '');
+            const [tgChatId, setTgChatId] = useState(localStorage.getItem('tgChatId') || '');
+            const [tgEnabled, setTgEnabled] = useState(localStorage.getItem('tgEnabled') === 'true');
+            const [lastAlertKey, setLastAlertKey] = useState(''); // Mencegah spam pesan berulang
+
+            // Menyimpan pengaturan Telegram ke browser (aman)
+            useEffect(() => {
+                localStorage.setItem('tgToken', tgToken);
+                localStorage.setItem('tgChatId', tgChatId);
+                localStorage.setItem('tgEnabled', tgEnabled);
+            }, [tgToken, tgChatId, tgEnabled]);
+
+            // Pengatur Detak Mundur
             useEffect(() => {
                 const timer = setInterval(() => {
                     const now = new Date();
@@ -204,7 +217,7 @@
                 return () => clearInterval(timer);
             }, [timeframe]);
 
-            const fetchMarketData = async () => {
+            //            const fetchMarketData = async () => {
                 setLoading(true);
                 setError(null);
                 try {
@@ -294,28 +307,20 @@
                 return () => clearInterval(interval);
             }, [asset, timeframe]);
 
-            // --- SISTEM CONFLUENCE CHECKLIST (6-Point Institutional Matrix) ---
-            const getConfluenceChecklist = () => {
+            //            const getConfluenceChecklist = () => {
                 if (!marketData || !marketData.stoch || !marketData.volSurge) return null;
                 const { price, ema9, ema21, sma50, rsi, macd, bb, stoch, volSurge } = marketData;
 
                 const checkTrend = ema9 > ema21 && price > sma50;
                 const checkTrendBear = ema9 < ema21 && price < sma50;
-                
                 const checkMomentum = macd && macd.macd > macd.signal;
                 const checkMomentumBear = macd && macd.macd < macd.signal;
-
                 const checkRsiBull = rsi < 65 && rsi > 40; 
                 const checkRsiBear = rsi > 35 && rsi < 60; 
-
                 const checkBbBull = bb ? price < (bb.upper * 0.995) : true;
                 const checkBbBear = bb ? price > (bb.lower * 1.005) : true;
-
-                // NEW: Stochastic Filter
                 const checkStochBull = stoch.k > stoch.d && stoch.k < 80;
                 const checkStochBear = stoch.k < stoch.d && stoch.k > 20;
-
-                // NEW: Volume Confirmation
                 const checkVolume = volSurge.isSurging;
 
                 return {
@@ -340,14 +345,12 @@
 
             const checklist = getConfluenceChecklist();
 
-            // Keputusan Final berdasarkan 6 poin
             const getSignal = () => {
                 if (!marketData || !checklist) return { signal: 'LOADING', type: 'neutral', totalActive: 0 };
                 
                 const activeBuy = checklist.buy.filter(item => item.active).length;
                 const activeSell = checklist.sell.filter(item => item.active).length;
 
-                // Sangat Ketat: Butuh 5/6 untuk Strong, 4/6 untuk Normal. 
                 if (activeBuy >= 5) return { signal: 'STRONG BUY', type: 'buy', totalActive: activeBuy };
                 if (activeBuy === 4) return { signal: 'BUY', type: 'buy', totalActive: activeBuy };
                 if (activeSell >= 5) return { signal: 'STRONG SELL', type: 'sell', totalActive: activeSell };
@@ -357,14 +360,139 @@
             };
 
             const signal = getSignal();
-
+            
             const formatPrice = (price) => {
                 return price >= 1000 ? price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : price.toLocaleString('en-US', {minimumFractionDigits: 4, maximumFractionDigits: 4});
             };
 
-            return (
+            //            const sendTelegramMessage = async (signalName, isTest = false) => {
+                if (!tgToken.trim() || !tgChatId.trim()) {
+                    if (isTest) alert("Harap isi Token dan Chat ID Telegram terlebih dahulu.");
+                    return;
+                }
+
+                // Kalkulasi Harga TP/SL Dinamis
+                const tp1 = formatPrice(signal.type === 'buy' ? marketData.price + (marketData.atr * atrMultipliers.tp1) : marketData.price - (marketData.atr * atrMultipliers.tp1));
+                const sl = formatPrice(signal.type === 'buy' ? marketData.price - (marketData.atr * atrMultipliers.sl) : marketData.price + (marketData.atr * atrMultipliers.sl));
+                const icon = signal.type === 'buy' ? '🟢' : signal.type === 'sell' ? '🔴' : '🟡';
+
+                const textMessage = isTest 
+                    ? `✅ <b>AuraBot Pro Terhubung!</b>\nNotifikasi Telegram berhasil dipasang dan diaktifkan. Anda bisa meninggalkan komputer sekarang.` 
+                    : `🚨 <b>${icon} SINYAL ${signalName} DETECTED!</b> 🚨\n\n💎 <b>Aset:</b> ${asset.name}\n⏱ <b>Waktu:</b> ${timeframe.label}\n💵 <b>Harga Masuk:</b> $${formatPrice(marketData.price)}\n\n🎯 <b>Target Profit (TP1):</b> $${tp1}\n🛡 <b>Batas Rugi (SL):</b> $${sl}\n\n<i>Analisa Konfirmasi: ${signal.totalActive}/6 Syarat Terpenuhi.\nHarap kelola lot / margin Anda dengan bijak!</i>`;
+
+                const url = `https://api.telegram.org/bot${tgToken.trim()}/sendMessage`;
+
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            chat_id: tgChatId.trim(),
+                            text: textMessage,
+                            parse_mode: 'HTML'
+                        })
+                    });
+                    
+                    if (!response.ok) throw new Error('Pengiriman Gagal');
+                    if (isTest) alert('Berhasil! Cek HP kamu sekarang, bot Telegram sudah mengirim pesan.');
+                } catch (error) {
+                    if (isTest) alert('Error: Telegram gagal dihubungi. Pastikan Token Bot dan Chat ID kamu sudah BENAR, dan kamu sudah klik "START" di bot kamu pada aplikasi Telegram.');
+                    console.error("Gagal mengirim notifikasi Telegram:", error);
+                }
+            };
+
+            // Efek Pengawas Sinyal: Trigger notifikasi jika STRONG BUY/SELL
+            useEffect(() => {
+                if (!tgEnabled || !marketData || signal.signal === 'LOADING') return;
+
+                const currentSignalName = signal.signal;
+                
+                // Bot HANYA akan menelpon HP-mu jika ada sinyal STRONG
+                if (currentSignalName === 'STRONG BUY' || currentSignalName === 'STRONG SELL') {
+                    // Buat kunci unik agar bot tidak SPAM berulang-ulang di waktu yang sama
+                    const newKey = `${asset.symbol}-${timeframe.label}-${currentSignalName}`;
+                    
+                    if (lastAlertKey !== newKey) {
+                        sendTelegramMessage(currentSignalName, false);
+                        setLastAlertKey(newKey); // Kunci diaktifkan agar tidak kirim lagi sampai sinyal berubah
+                    }
+                } else if (currentSignalName === 'HOLD') {
+                    // Jika pasar mendingin, buka kunci alert, agar jika mengamuk lagi, bot bisa mengabari
+                    if(lastAlertKey !== '') setLastAlertKey('');
+                }
+            }, [marketData, tgEnabled]);
+
+
+            //            return (
                 <div className="p-4 md:p-6 lg:p-8 max-w-[1500px] mx-auto">
-                    {/* Header */}
+                    
+                    {/* Modal Pengaturan Telegram Overlay */}
+                    {showTgModal && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                            <div className="bg-[#0f172a] border border-slate-700 rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
+                                <button onClick={() => setShowTgModal(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white">
+                                    <XIcon className="w-5 h-5"/>
+                                </button>
+                                
+                                <div className="flex items-center gap-3 mb-6">
+                                    <div className="bg-blue-500/20 p-2 rounded-xl"><Send className="w-6 h-6 text-blue-400" /></div>
+                                    <h3 className="text-xl font-bold text-white">Notifikasi Pintar Telegram</h3>
+                                </div>
+                                
+                                <p className="text-xs text-slate-400 mb-6 leading-relaxed">
+                                    Bot akan mengirimkan pesan instan ke HP Anda hanya jika mendeteksi sinyal <b className="text-emerald-400">STRONG BUY</b> atau <b className="text-rose-400">STRONG SELL</b>.
+                                </p>
+
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">1. Telegram Bot Token</label>
+                                        <input 
+                                            type="text" 
+                                            placeholder="contoh: 7123456:AAFx_YtrG..." 
+                                            value={tgToken}
+                                            onChange={(e) => setTgToken(e.target.value)}
+                                            className="w-full bg-black/50 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">2. Telegram Chat ID</label>
+                                        <input 
+                                            type="text" 
+                                            placeholder="contoh: 123456789" 
+                                            value={tgChatId}
+                                            onChange={(e) => setTgChatId(e.target.value)}
+                                            className="w-full bg-black/50 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors"
+                                        />
+                                    </div>
+                                    
+                                    <div className="pt-2 flex items-center justify-between border-t border-slate-800 mt-4">
+                                        <span className="text-sm font-semibold text-slate-300">Status Notifikasi</span>
+                                        <label className="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" checked={tgEnabled} onChange={() => setTgEnabled(!tgEnabled)} className="sr-only peer" />
+                                            <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                                        </label>
+                                    </div>
+
+                                    <div className="flex gap-3 pt-4">
+                                        <button 
+                                            onClick={() => sendTelegramMessage('TEST', true)}
+                                            className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-bold py-2.5 rounded-xl transition-colors"
+                                        >
+                                            Tes Kirim Pesan
+                                        </button>
+                                        <button 
+                                            onClick={() => setShowTgModal(false)}
+                                            className="flex-1 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold py-2.5 rounded-xl transition-colors shadow-lg shadow-blue-500/20"
+                                        >
+                                            Simpan & Tutup
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Header Utama */}
                     <header className="flex flex-col lg:flex-row justify-between items-center mb-8 gap-6 border-b border-slate-800 pb-6">
                         <div className="flex items-center gap-4 w-full lg:w-auto justify-center lg:justify-start">
                             <div className="bg-gradient-to-br from-amber-500 to-orange-600 p-3.5 rounded-2xl shadow-xl shadow-amber-500/20">
@@ -379,21 +507,28 @@
                             </div>
                         </div>
 
-                        {/* Navigasi Aset & Timeframe */}
-                        <div className="flex flex-col md:flex-row gap-3 w-full lg:w-auto">
-                            <div className="flex bg-[#0f172a] p-1.5 rounded-2xl border border-slate-800 shadow-inner">
+                        {/* Navigasi Kanan (Aset, Timeframe & Tombol Notifikasi) */}
+                        <div className="flex flex-col md:flex-row items-center gap-3 w-full lg:w-auto">
+                            <div className="flex w-full md:w-auto bg-[#0f172a] p-1.5 rounded-2xl border border-slate-800 shadow-inner">
                                 {assets.map(a => (
                                     <button key={a.symbol} onClick={() => setAsset(a)} className={`flex-1 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${asset.symbol === a.symbol ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}>
                                         {a.name}
                                     </button>
                                 ))}
                             </div>
-                            <div className="flex gap-1 bg-[#0f172a] p-1.5 rounded-2xl overflow-x-auto border border-slate-800 shadow-inner scrollbar-hide">
-                                {timeframes.map(tf => (
-                                    <button key={tf.label} onClick={() => setTimeframe(tf)} className={`px-3 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap min-w-[3rem] ${timeframe.label === tf.label ? 'bg-white text-slate-900 shadow-md' : 'text-slate-500 hover:text-white'}`}>
-                                        {tf.label}
-                                    </button>
-                                ))}
+                            <div className="flex w-full md:w-auto justify-center gap-3">
+                                <div className="flex gap-1 bg-[#0f172a] p-1.5 rounded-2xl overflow-x-auto border border-slate-800 shadow-inner scrollbar-hide">
+                                    {timeframes.map(tf => (
+                                        <button key={tf.label} onClick={() => setTimeframe(tf)} className={`px-3 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap min-w-[3rem] ${timeframe.label === tf.label ? 'bg-white text-slate-900 shadow-md' : 'text-slate-500 hover:text-white'}`}>
+                                            {tf.label}
+                                        </button>
+                                    ))}
+                                </div>
+                                
+                                {/* Tombol Buka Modal Notifikasi */}
+                                <button onClick={() => setShowTgModal(true)} className={`p-2.5 rounded-2xl border transition-all ${tgEnabled ? 'bg-blue-500/20 border-blue-500/50 text-blue-400 hover:bg-blue-500/30' : 'bg-[#0f172a] border-slate-800 text-slate-500 hover:text-white'}`}>
+                                    <Bell className={`w-5 h-5 ${tgEnabled ? 'animate-pulse' : ''}`} />
+                                </button>
                             </div>
                         </div>
                     </header>
@@ -512,11 +647,10 @@
                         {/* Kolom Kanan: Live Chart & Data Metrik Terpusat */}
                         <div className="xl:col-span-7 flex flex-col gap-6">
                             
-                            {/* Grid Indikator Metrik (Dipindah ke atas untuk kemudahan baca) */}
+                            {/* Grid Indikator Metrik */}
                             <div className="bg-[#0f172a] rounded-[2rem] p-5 md:p-6 border border-slate-800 shadow-2xl">
                                 {marketData ? (
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                        {/* Trend (EMA) */}
                                         <div className="bg-black/30 p-3 rounded-xl border border-slate-800/80">
                                             <p className="text-[10px] uppercase text-slate-500 font-bold mb-1">Arah Tren (EMA)</p>
                                             <div className="flex items-end gap-2">
@@ -526,7 +660,6 @@
                                             </div>
                                         </div>
 
-                                        {/* Momentum (MACD) */}
                                         <div className="bg-black/30 p-3 rounded-xl border border-slate-800/80">
                                             <p className="text-[10px] uppercase text-slate-500 font-bold mb-1">Momentum (MACD)</p>
                                             <div className="flex items-end gap-2">
@@ -536,7 +669,6 @@
                                             </div>
                                         </div>
 
-                                        {/* Precision (Stochastic) */}
                                         <div className="bg-black/30 p-3 rounded-xl border border-slate-800/80">
                                             <p className="text-[10px] uppercase text-slate-500 font-bold mb-1">Presisi (Stoch)</p>
                                             <div className="flex flex-col">
@@ -547,7 +679,6 @@
                                             </div>
                                         </div>
 
-                                        {/* Volume Surge */}
                                         <div className="bg-black/30 p-3 rounded-xl border border-slate-800/80 relative overflow-hidden">
                                             {marketData.volSurge?.isSurging && <div className="absolute top-0 right-0 w-2 h-full bg-amber-500 animate-pulse"></div>}
                                             <p className="text-[10px] uppercase text-slate-500 font-bold mb-1">Status Volume</p>
@@ -582,7 +713,6 @@
                                             <p className="text-xs text-amber-500/80 font-mono tracking-widest uppercase">Sinkronisasi Kelembagaan...</p>
                                         </div>
                                     )}
-                                    {/* Menambahkan Indikator Volume dan Stochastic di Iframe */}
                                     <iframe 
                                         key={timeframe.tv + asset.symbol}
                                         title="Chart"
