@@ -290,8 +290,8 @@
                 setLoading(true);
                 setError(null);
                 
-                // Ambil data teknikal dan berita secara bersamaan
-                await fetchNewsData();
+                // HAPUS await fetchNewsData() DARI SINI
+                // Kita tidak lagi menyuruh market data menunggu berita selesai dimuat
 
                 try {
                     let highs = [], lows = [], closes = [], volumes = [];
@@ -375,8 +375,15 @@
             };
 
             useEffect(() => {
+                // Memanggil keduanya secara paralel (berbarengan) tanpa saling tunggu
                 fetchMarketData();
-                const interval = setInterval(fetchMarketData, 60000);
+                fetchNewsData(); 
+                
+                const interval = setInterval(() => {
+                    fetchMarketData();
+                    fetchNewsData();
+                }, 60000);
+                
                 return () => clearInterval(interval);
             }, [asset, timeframe]);
 
